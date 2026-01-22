@@ -1,0 +1,1436 @@
+{
+  "name": "Google Maps Email Scraper with serp api workflow2",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "engine",
+              "value": "google_maps"
+            },
+            {
+              "name": "q",
+              "value": "={{ $('Webhook').item.json.body.lead_type }}"
+            },
+            {
+              "name": "location",
+              "value": "={{ $('Webhook').item.json.body.location }}"
+            },
+            {
+              "name": "z",
+              "value": "14"
+            },
+            {
+              "name": "start",
+              "value": "={{ $json.start }}"
+            },
+            {
+              "name": "api_key"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -2976,
+        -304
+      ],
+      "id": "0e51fb77-f88b-40e7-a3d4-8b0d6e5e555b",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -3200,
+        -352
+      ],
+      "id": "bab6c594-4c14-4511-bc78-fe2eca3d3b47",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filter for HTTPS websites with .com or .in domains\n// AND exclude fake/booking platforms\n\n// Blocked patterns (booking platforms, social media, etc.)\nconst blockedPatterns = [\n  /book-appointment/i,\n  /booking/i,\n  /healthplix\\.com/i,\n  /practo\\.com/i,\n  /doctolib/i,\n  /zocdoc/i,\n  /calendly/i,\n  /facebook\\.com/i,\n  /instagram\\.com/i,\n  /twitter\\.com/i,\n  /linkedin\\.com/i,\n  /youtube\\.com/i,\n  /google\\.com\\/maps/i,\n  /maps\\.google/i,\n  /justdial/i,\n  /indiamart/i,\n  /sulekha/i,\n  /yelp\\.com/i,\n];\n\nfunction isValidWebsite(url) {\n  if (!url || typeof url !== 'string' || url.trim() === '') {\n    return false;\n  }\n  \n  const urlLower = url.toLowerCase().trim();\n  \n  // MUST have HTTPS\n  if (!urlLower.startsWith('https://')) {\n    return false;\n  }\n  \n  // MUST have .com OR .in domain\n  const hasComDomain = urlLower.includes('.com/') || urlLower.includes('.com');\n  const hasInDomain = urlLower.includes('.in/') || urlLower.includes('.in');\n  \n  if (!hasComDomain && !hasInDomain) {\n    return false;\n  }\n  \n  // Must NOT match any blocked patterns\n  for (const pattern of blockedPatterns) {\n    if (pattern.test(urlLower)) {\n      return false;\n    }\n  }\n  \n  return true;\n}\n\n// Get all items and filter\nconst items = $input.all();\n\nconst filtered = items.filter(item => {\n  const website = item.json.website || item.json.Website || '';\n  return isValidWebsite(website);\n});\n\nreturn filtered;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2304,
+        -672
+      ],
+      "id": "7b383931-996b-4523-bb33-86a8373834b9",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2ceda7f4-9a01-400c-95dc-21aae6f4c077",
+              "name": "Name",
+              "value": "={{ $json.Name }}",
+              "type": "string"
+            },
+            {
+              "id": "26d017a7-42f5-4f9f-b07f-266245c80bcb",
+              "name": "website",
+              "value": "={{ $json.website }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2080,
+        -672
+      ],
+      "id": "4fc79d68-3762-4860-a6e1-0e9dbf3fbdd0",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "amount": 3
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -1184,
+        -496
+      ],
+      "id": "5e3f9b0f-6114-4a7c-a7d6-3afc8639b88f",
+      "name": "Wait",
+      "webhookId": "2492f2cc-a1ea-43c7-8843-ccff5973e3ed"
+    },
+    {
+      "parameters": {
+        "maxItems": 10
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -1856,
+        -672
+      ],
+      "id": "5d6cd070-3679-4648-a2fe-8a81eefda9fa",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1632,
+        -672
+      ],
+      "id": "d6fdb8c6-6fa3-4c58-a291-9b6e5f4d2065",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "gpt-3.5-turbo"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -448,
+        -544
+      ],
+      "id": "e7dc0b3f-fe60-47b5-b1ee-12dbd9e5e8eb",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "HJgv4DVCVgkE8VyV",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=# ROLE: \n\nYou are a cold outreach specialist writing short, high-response emails for busy professionals.\n\n# GOAL:\n\nTurn a company summary into a concise cold email that:\n\n-Reflects the recipient’s real operational workload\n\n-Highlights hidden time lost to coordination and follow-ups\n\n-States a realistic weekly time-saving estimate\n\n-Offers a free trial\n\n-Encourages a reply\n\n# HARD CONSTRAINTS:  (NON-NEGOTIABLE)\n\n-Maximum 90 words\n\n-Maximum 5 paragraphs\n\n-No paragraph longer than 2 lines\n\n-No marketing language\n\n-No technical explanations\n\n-Do NOT explain what automation is\n\n-Do NOT mention tools, platforms, or vendors\n\n-Do NOT pitch aggressively\n\n# MANDATORY ANALYSIS STEP :\n\nBefore writing, infer:\n\n-Type of organization (hospital, agency, SaaS, etc.)\n\n-Daily coordination complexity\n\n-Volume of scheduling, follow-ups, or handoffs\n\nFrom this, estimate time saved per week, using realistic ranges:\n\n-Low complexity: 3–6 hours/week\n\n-Medium complexity: 6–10 hours/week\n\n-High complexity: 10–20 hours/week\n\n-Use one range only in the email.\n\n# WRITING ORDER (STRICT)\n\n-Start with their work (no self-introduction)\n\n-Call out coordination/admin load\n\n-State the time currently being lost (implied)\n\n-State how much time can realistically be saved\n\n-Offer a free trial\n\n-End with one soft question\n\n# STYLE  :\n\n-Direct\n\n-Human\n\n-Calm confidence\n\nWritten for people who skim\n\nOUTPUT\n\nReturn only the email text.\nNo explanations.\nNo headings.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -160,
+        -768
+      ],
+      "id": "e89707c6-cdf8-4d7b-9265-0d60e5ef3669",
+      "name": "draft mail",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.data.markdown }}",
+        "options": {
+          "systemMessage": "=you are a professional content analyzer and summary maker , you are master in this \n\n# Instructions:\n\n- You have to provide summary based on the given markdown\n- You don't have to use your own words for making a summary.\n- summary should be in-depth but not long\n- The summary should be understandable; don't use any fancy words. Keep it simple\n- summary should be small, not more than 90 words but should be in very detail\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -512,
+        -768
+      ],
+      "id": "0dfa64cf-5714-4c68-b542-9fcce3b84f0a",
+      "name": "summary agent",
+      "executeOnce": false
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -2304,
+        -480
+      ],
+      "id": "cad7912e-f73b-45cf-93ae-38f170127e98",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a05638af-1008-473f-b51e-a63d4bac2aa2",
+              "name": "body",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "35a8f552-f2b7-4827-ac47-5b8cfeaa8fbe",
+              "name": "summary",
+              "value": "={{ $('summary agent').item.json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "6e59f8de-8b11-443e-960d-0d820250e171",
+              "name": "website",
+              "value": "={{ $('Edit Fields1').item.json.website }}",
+              "type": "string"
+            },
+            {
+              "id": "708931fa-6c77-4359-81a8-da535831bbf4",
+              "name": "address",
+              "value": "={{ $('filters the all data').item.json.address }}",
+              "type": "string"
+            },
+            {
+              "id": "9560ce00-68eb-438f-80ee-9a23878b2466",
+              "name": "type",
+              "value": "={{ $('filters the all data').item.json.type }}",
+              "type": "string"
+            },
+            {
+              "id": "eef6d612-4892-4ab8-a59d-4c539ae8265d",
+              "name": "email",
+              "value": "={{ $('email and markdown mapping').item.json.email }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        192,
+        -768
+      ],
+      "id": "9ff080c9-4998-49a1-9ecb-8eb82b50d661",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5c35fc46-f058-47e0-a001-8e6179244717",
+              "name": "lead type",
+              "value": "={{ $json.body.lead_type }}",
+              "type": "string"
+            },
+            {
+              "id": "9bb8c4a6-76c2-4d04-a804-7ef4c97c1980",
+              "name": "location",
+              "value": "={{ $json.body.location }}",
+              "type": "string"
+            },
+            {
+              "id": "aa8d6572-c24b-404a-8206-702d0d9648c3",
+              "name": "Email",
+              "value": "={{ $json.body.email }}",
+              "type": "string"
+            },
+            {
+              "id": "9c2b8a78-f7ac-4d94-840a-55ec489a3303",
+              "name": "Name",
+              "value": "={{ $json.body.lead_name }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        864,
+        -1008
+      ],
+      "id": "462425dd-029b-49bc-ad81-f2efd504c5eb",
+      "name": "Edit Fields5"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.firecrawl.dev/v2/scrape",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"url\":\"{{ $json.website }}\",\n  \"formats\": [ \"markdown\" ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1408,
+        -576
+      ],
+      "id": "ef9da237-eebd-45f7-8413-38ed28286314",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "7seLHZu19ttXBLh6",
+          "name": "firecrawl api"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  { json: { start: 0 } },\n  { json: { start: 20 } },\n  { json: { start: 40 } },\n  { json: { start: 60 } },\n  { json: { start: 80 } }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3424,
+        -352
+      ],
+      "id": "02d19ffb-8cfd-494e-be08-03be4880b1f3",
+      "name": "pagination"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract and filter Google Maps data from previous node\n// Configure your filter criteria below\n\nconst filterCriteria = {\n  // Filter by type/business category keywords (case-insensitive)\n  typeKeywords: [], // e.g., ['hospital', 'restaurant', 'hotel'] - Empty array [] to include all\n  \n  // Filter by minimum review count\n  minReviews: 0, // Set to 0 to include all\n  \n  // Filter by minimum rating\n  minRating: 0, // Set to 0 to include all\n  \n  // Filter addresses containing specific locations\n  addressKeywords: [], // e.g., ['Ahmedabad', 'Gujarat'] - Empty array [] to skip\n  \n  // Require specific fields to be present\n  requireTitle: false,\n  requireAddress: false,\n};\n\n// Get input items from previous node\nconst items = $input.all();\nconst filtered = [];\n\n// Debug: Log the structure to understand the data\nconsole.log('Total items received:', items.length);\nconsole.log('First item structure:', JSON.stringify(items[0], null, 2));\n\nfor (const item of items) {\n  // Access the actual data - could be nested in different ways\n  let data = item.json;\n  \n  // Check if data is in local_results array (common in SerpAPI)\n  if (data.local_results && Array.isArray(data.local_results)) {\n    // Process each result in local_results array\n    for (const result of data.local_results) {\n      processAndFilterResult(result);\n    }\n  } else {\n    // Process single result\n    processAndFilterResult(data);\n  }\n}\n\nfunction processAndFilterResult(data) {\n  // Extract relevant fields from the data structure\n  const title = data.title || '';\n  const address = data.address || '';\n  const website = data.website || '';\n  const reviewCount = data.reviews || 0;\n  const rating = data.rating || 0;\n  const type = data.type || '';\n  const types = data.types || [];\n  const typeIds = data.type_ids || [];\n  const gpsCoordinates = data.gps_coordinates || {};\n  const phoneNumber = data.phone || '';\n  const placeId = data.place_id || '';\n  const providerId = data.provider_id || '';\n  \n  // Apply filters\n  let passesFilter = true;\n  \n  // Required fields check\n  if (filterCriteria.requireTitle && !title) {\n    passesFilter = false;\n  }\n  \n  if (filterCriteria.requireAddress && !address) {\n    passesFilter = false;\n  }\n  \n  // Type/category filter\n  if (filterCriteria.typeKeywords.length > 0) {\n    const typeLower = type.toLowerCase();\n    const allTypes = [...types, ...typeIds].map(t => t.toLowerCase());\n    \n    const hasKeyword = filterCriteria.typeKeywords.some(kw => {\n      const kwLower = kw.toLowerCase();\n      return typeLower.includes(kwLower) || allTypes.some(t => t.includes(kwLower));\n    });\n    \n    if (!hasKeyword) passesFilter = false;\n  }\n  \n  // Review count filter\n  if (reviewCount < filterCriteria.minReviews) {\n    passesFilter = false;\n  }\n  \n  // Rating filter\n  if (rating < filterCriteria.minRating) {\n    passesFilter = false;\n  }\n  \n  // Address filter\n  if (filterCriteria.addressKeywords.length > 0) {\n    const addressLower = address.toLowerCase();\n    const hasLocation = filterCriteria.addressKeywords.some(kw => \n      addressLower.includes(kw.toLowerCase())\n    );\n    if (!hasLocation) passesFilter = false;\n  }\n  \n  // If passes all filters, add to results with clean structure\n  if (passesFilter) {\n    filtered.push({\n      json: {\n        title: title,\n        address: address,\n        website: website,\n        phone: phoneNumber,\n        rating: rating,\n        reviews: reviewCount,\n        type: type,\n        types: types,\n        latitude: gpsCoordinates.latitude || null,\n        longitude: gpsCoordinates.longitude || null,\n        place_id: placeId,\n        provider_id: providerId,\n        reviews_link: data.reviews_link || '',\n        photos_link: data.photos_link || '',\n        // Include all original data\n        _original: data\n      }\n    });\n  }\n}\n\n// Debug: Log results\nconsole.log('Filtered items:', filtered.length);\n\n// Return filtered results\nreturn filtered;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2976,
+        -496
+      ],
+      "id": "90859fca-67b8-49ac-b97b-0935e1066c97",
+      "name": "filters the all data"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "eec84923-7926-4bb1-b4f6-4d296fe25b85",
+              "name": "Name",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "56eac03b-19bf-460d-9bd5-fb68711c8b9e",
+              "name": "website",
+              "value": "={{ $json.website }}",
+              "type": "string"
+            },
+            {
+              "id": "54a55e6a-a25a-4dac-99af-0f668096631a",
+              "name": "address",
+              "value": "={{ $json.address }}",
+              "type": "string"
+            },
+            {
+              "id": "1f8c4aef-5bdc-47c9-a1fb-f4817255670d",
+              "name": "lead name",
+              "value": "={{ $json.type }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2752,
+        -496
+      ],
+      "id": "c807f44c-5fb4-4bc4-8404-74eec08dab31",
+      "name": "specific data from previous node"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4a088c04-a894-436e-b413-21136451ba21",
+              "leftValue": "={{ $json.website }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -2528,
+        -496
+      ],
+      "id": "1e6f3af9-e32a-4d83-9da7-1768f4a4b5f5",
+      "name": "website filter"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract ONLY email addresses from markdown\n\nconst items = $input.all();\nconst results = [];\n\n// Strict email regex\nconst emailRegex = /\\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}\\b/g;\n\nfor (const item of items) {\nconst data = item.json;\n\n// Get markdown content\nlet markdown = '';\nif (data.data && data.data.markdown) {\nmarkdown = data.data.markdown;\n}\n\n// Extract emails\nconst emailMatches = markdown.match(emailRegex) || [];\n\n// Filter out false positives from social media URLs\nconst emails = emailMatches.filter(email => {\nreturn !email.includes('[whatsapp.com](http://whatsapp.com/)') &&\n!email.includes('[facebook.com](http://facebook.com/)') &&\n!email.includes('[instagram.com](http://instagram.com/)');\n});\n\n// Remove duplicates\nconst uniqueEmails = [...new Set(emails)];\n\nresults.push({\njson: {\nemail: uniqueEmails[0] || null\n}\n});\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1408,
+        -768
+      ],
+      "id": "2ada011e-10c9-4252-89be-7b4c6c5b949e",
+      "name": "email extractor"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5afe5729-fbfa-4d36-bd55-d8a37e28bc5f",
+              "name": "email",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1184,
+        -768
+      ],
+      "id": "59d4255b-f469-4ca5-bd03-f09b73564343",
+      "name": "email mapping"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0a1b4a9d-0b1c-4ced-b6a3-0c2613dd9c24",
+              "leftValue": "={{ $json.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        -960,
+        -768
+      ],
+      "id": "1a1e94a3-b615-4a45-9b80-c1cf7a2e5187",
+      "name": "email filter"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "da7ba763-1355-4ca2-80f7-5a02b39cda37",
+              "name": "email",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "7606eecb-2dfe-46b8-b701-aa7e97f06383",
+              "name": "data.markdown",
+              "value": "={{ $('Loop Over Items1').item.json.data.markdown }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -736,
+        -768
+      ],
+      "id": "8f1694bb-ad0d-4c60-b64d-013ba4c5e97c",
+      "name": "email and markdown mapping"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1llisKj_ETFjRWmFPufidglq8a8JByNjvbez3LftslYg",
+          "mode": "list",
+          "cachedResultName": "client lead data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1llisKj_ETFjRWmFPufidglq8a8JByNjvbez3LftslYg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1llisKj_ETFjRWmFPufidglq8a8JByNjvbez3LftslYg/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Lead name": "={{ $json.type }}",
+            "Website": "={{ $json.website }}",
+            "Address": "={{ $json.address }}",
+            "Email": "={{ $json.email }}",
+            "company summary": "={{ $json.summary }}",
+            "Ice breaker": "={{ $('draft mail').item.json.output }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Lead name",
+              "displayName": "Lead name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Address",
+              "displayName": "Address",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Website",
+              "displayName": "Website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company summary",
+              "displayName": "company summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Ice breaker",
+              "displayName": "Ice breaker",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        416,
+        -768
+      ],
+      "id": "490e8df7-5842-488f-9009-622173517593",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "2mbRlxAwrIdOZEGE",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "copy",
+        "fileId": {
+          "__rl": true,
+          "value": "1llisKj_ETFjRWmFPufidglq8a8JByNjvbez3LftslYg",
+          "mode": "list",
+          "cachedResultName": "client lead data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1llisKj_ETFjRWmFPufidglq8a8JByNjvbez3LftslYg/edit?usp=drivesdk"
+        },
+        "name": "data",
+        "sameFolder": false,
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1jrzHemOjbnPEqU4WN4geG397ojN_ufkn",
+          "mode": "list",
+          "cachedResultName": "lead generation data",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1jrzHemOjbnPEqU4WN4geG397ojN_ufkn"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        640,
+        -768
+      ],
+      "id": "9b1ae631-a804-486a-9ec4-f251040a6818",
+      "name": "Copy file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "tOqbT5D1SN5ARmsb",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "389f0981-0a87-4301-b6db-49ff471dbc00",
+              "name": "id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        864,
+        -768
+      ],
+      "id": "eb5a926a-cd94-450c-b5c3-7f9845389a59",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.Email }}",
+        "subject": "Here is your lead data",
+        "emailType": "text",
+        "message": "=Hey: {{ $('Edit Fields3').item.json.Name }} Your lead information is ready. Thanks for using this stuff",
+        "options": {
+          "appendAttribution": false,
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {}
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1984,
+        -896
+      ],
+      "id": "6d1ff488-5104-4e9d-90d2-5e5c3cc30f95",
+      "name": "Send a message",
+      "webhookId": "f56e9348-75ef-4798-8d25-c41b8418d837",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "hrX91CyO1lXi1DTp",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {
+          "googleFileConversion": {
+            "conversion": {
+              "docsToFormat": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+              "sheetsToFormat": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            }
+          },
+          "fileName": "={{ $json.Name }},lead information"
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1760,
+        -896
+      ],
+      "id": "a87f25d1-175c-4bed-a288-b6c32bf44d0a",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "tOqbT5D1SN5ARmsb",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all items from both inputs\nconst input1Data = $input.first().json;\nconst input2Data = $input.last().json;\n\n// Combine them into a single object\nreturn {\n  input1: input1Data,\n  input2: input2Data\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1312,
+        -896
+      ],
+      "id": "f284d036-645b-467a-8d72-aff66ea6abeb",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1088,
+        -896
+      ],
+      "id": "2171d9f5-fbde-4008-85b4-8007a5d458f5",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3948beff-0524-4141-bf6e-2179cc8206f4",
+              "name": "Email",
+              "value": "={{ $json.input1.Email }}",
+              "type": "string"
+            },
+            {
+              "id": "8241bbdd-441c-4e5f-9325-8bf2e9aa3d2b",
+              "name": "id",
+              "value": "={{ $json.input2.id }}",
+              "type": "string"
+            },
+            {
+              "id": "06c9a2ec-00fa-4312-96ac-1e1937561b53",
+              "name": "Name",
+              "value": "={{ $json.input1.Name }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1536,
+        -896
+      ],
+      "id": "0c9b2681-d35f-468d-aa25-ec0dd5639985",
+      "name": "Edit Fields3"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "documentId": {
+          "__rl": true,
+          "value": "1llisKj_ETFjRWmFPufidglq8a8JByNjvbez3LftslYg",
+          "mode": "list",
+          "cachedResultName": "client lead data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1llisKj_ETFjRWmFPufidglq8a8JByNjvbez3LftslYg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1llisKj_ETFjRWmFPufidglq8a8JByNjvbez3LftslYg/edit#gid=0"
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2208,
+        -896
+      ],
+      "id": "9d397a90-be8e-48d8-a217-77b4c63b5bd7",
+      "name": "Delete rows or columns from sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "2mbRlxAwrIdOZEGE",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "deleteFile",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Download file').item.json.id }}",
+          "mode": "id"
+        },
+        "options": {
+          "deletePermanently": true
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2432,
+        -896
+      ],
+      "id": "dd3b579f-52e7-49f0-99fb-704e8576464a",
+      "name": "Delete a file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "tOqbT5D1SN5ARmsb",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "2fde4db6-b7a7-4753-9673-91a7b0735047",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -3680,
+        -624
+      ],
+      "id": "80f76a08-9cc4-413d-abe2-fd120f7b4d29",
+      "name": "Webhook",
+      "webhookId": "2fde4db6-b7a7-4753-9673-91a7b0735047"
+    }
+  ],
+  "pinData": {
+    "HTTP Request": [
+      {
+        "json": {
+          "success": true,
+          "data": {
+            "markdown": "🚀 Unlock exclusive deals – Limited Time Only!\n\n📢 Latest on YouTube:\n\n[1\\. Beginner ASP.NET Web App Course – Step-by-Step with Visual Studio](https://youtu.be/uNSgCnvNukc) [2\\. Getting Started with ASP.NET Web Forms \\| Create New Project + Bootstrap UI](https://youtu.be/r6rLVD4sj9Y) [3\\. Internal vs External CSS in ASP.NET Bootstrap CRUD App \\| Web Dev Best Practices](https://youtu.be/cfD-YNsDKqE)\n\n# NextCodex – Empowering Digital Innovation\n\nWe build cutting-edge software solutions tailored for startups, businesses, and enterprises.\n\n[🚀 Get in Touch](https://www.nextcodex.in/?route=contact)\n\n## Our Services\n\n[**Web Development** \\\\\nResponsive, scalable, and modern websites and platforms.](https://www.nextcodex.in/?route=webDevtypes)\n\n[**Mobile Apps** \\\\\niOS & Android apps built with performance and UX in mind.](https://www.nextcodex.in/?route=mobileAppDev)\n\n[**Cloud Solutions** \\\\\nCloud-native apps, DevOps, and infrastructure at scale.](https://www.nextcodex.in/?route=cloudDev)\n\n## Why Choose NextCodex?\n\nWith a team of passionate developers, designers, and strategists, we bring your ideas to life\nusing the latest technologies. Whether it’s a mobile app, a complex backend, or a seamless user\nexperience — we’ve got you covered.\n\n\n- ✅ Agile & Transparent Development\n- ✅ Scalable & Secure Solutions\n- ✅ Focus on UI/UX Excellence\n\n## Ready to build something great?\n\nLet’s turn your idea into reality.\n\n[💡 Start Your Project](https://www.nextcodex.in/?route=pricing)",
+            "metadata": {
+              "twitter:title": "Bhopal’s Leading Software Development Company | NextCodex",
+              "ogImage": "https://nextcodex.in/assets/logo.png",
+              "title": "Top Software Development Company in Bhopal | Custom Web & Mobile App Solutions - NextCodex",
+              "language": [
+                "en",
+                "en-IN"
+              ],
+              "author": "NextCodex Team",
+              "og:image:type": "image/png",
+              "google-adsense-account": "ca-pub-9203502459922104",
+              "ogDescription": "Get scalable, high-performance software solutions tailored to your business. Based in Bhopal, we build web apps, mobile apps, and SaaS products.",
+              "ogUrl": "https://nextcodex.in",
+              "og:url": "https://nextcodex.in",
+              "og:title": "Top Software Development Company in Bhopal | NextCodex",
+              "description": "NextCodex is a full-stack software development company based in Bhopal, Madhya Pradesh. We specialize in custom software, mobile app development, SaaS platforms, and digital transformation for startups and enterprises. Hire developers in Bhopal today.",
+              "twitter:card": "summary_large_image",
+              "theme-color": "#000000",
+              "twitter:url": "https://nextcodex.in",
+              "twitter:description": "Hire expert developers for custom software, web and mobile apps. Trusted by startups & enterprises. Based in Bhopal, MP.",
+              "twitter:image": "https://nextcodex.in/assets/logo.png",
+              "og:image:alt": "NextCodex Logo",
+              "robots": "index, follow",
+              "ogTitle": "Top Software Development Company in Bhopal | NextCodex",
+              "viewport": "width=device-width, initial-scale=1",
+              "keywords": "software development company in Bhopal, best web development agency Bhopal, hire app developers Bhopal, custom software Bhopal Madhya Pradesh, SaaS development company India, MVP development for startups, mobile app developers Bhopal, IT services Bhopal, enterprise software solutions India, NextCodex developers, Node.js Angular experts Bhopal, full stack developers India",
+              "og:type": "website",
+              "og:image": "https://nextcodex.in/assets/logo.png",
+              "og:description": "Get scalable, high-performance software solutions tailored to your business. Based in Bhopal, we build web apps, mobile apps, and SaaS products.",
+              "favicon": "https://www.nextcodex.in/favicon.ico",
+              "scrapeId": "019bddc7-c080-768d-98f1-33e02537cabf",
+              "sourceURL": "https://www.nextcodex.in/",
+              "url": "https://www.nextcodex.in/",
+              "statusCode": 200,
+              "contentType": "text/html; charset=UTF-8",
+              "timezone": "America/New_York",
+              "proxyUsed": "basic",
+              "cacheState": "miss",
+              "indexId": "d2642edc-1bb5-4e0d-8a67-4f9703c384bf",
+              "creditsUsed": 1,
+              "concurrencyLimited": false
+            }
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "email mapping": [
+      {
+        "json": {
+          "email": "info@frienchtech.com"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      },
+      {
+        "json": {
+          "email": "info@avinitix.com"
+        },
+        "pairedItem": {
+          "item": 1
+        }
+      },
+      {
+        "json": {
+          "email": "info@webcraftsol.in"
+        },
+        "pairedItem": {
+          "item": 2
+        }
+      },
+      {
+        "json": {
+          "email": null
+        },
+        "pairedItem": {
+          "item": 3
+        }
+      },
+      {
+        "json": {
+          "email": null
+        },
+        "pairedItem": {
+          "item": 4
+        }
+      }
+    ],
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.internetboy.in",
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36",
+            "content-length": "166",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate, br, zstd",
+            "accept-language": "en-US,en;q=0.9,hi;q=0.8",
+            "content-type": "application/json",
+            "origin": "https://0bb14c6f-7542-40ce-ac3f-6f5fd728b19a.lovableproject.com",
+            "priority": "u=1, i",
+            "referer": "https://0bb14c6f-7542-40ce-ac3f-6f5fd728b19a.lovableproject.com/",
+            "sec-ch-ua": "\"Google Chrome\";v=\"143\", \"Chromium\";v=\"143\", \"Not A(Brand\";v=\"24\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "cross-site",
+            "x-forwarded-for": "14.139.122.114",
+            "x-forwarded-host": "n8n.internetboy.in",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "7d73f4cfdebd",
+            "x-real-ip": "14.139.122.114"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "lead_name": "priyansu",
+            "lead_type": "orthologist",
+            "email": "killerpriyansu2104@gmail.com",
+            "location": "kanpur ,india",
+            "notes": "",
+            "timestamp": "2026-01-21T12:03:14.530Z"
+          },
+          "webhookUrl": "https://n8n.internetboy.in/webhook-test/2fde4db6-b7a7-4753-9673-91a7b0735047",
+          "executionMode": "test"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "filters the all data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [
+          {
+            "node": "email extractor",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "summary agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "draft mail",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "draft mail": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "summary agent": {
+      "main": [
+        [
+          {
+            "node": "draft mail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields5": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "pagination": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "filters the all data": {
+      "main": [
+        [
+          {
+            "node": "specific data from previous node",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "specific data from previous node": {
+      "main": [
+        [
+          {
+            "node": "website filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "website filter": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "email extractor": {
+      "main": [
+        [
+          {
+            "node": "email mapping",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "email mapping": {
+      "main": [
+        [
+          {
+            "node": "email filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "email filter": {
+      "main": [
+        [
+          {
+            "node": "email and markdown mapping",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "email and markdown mapping": {
+      "main": [
+        [
+          {
+            "node": "summary agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Copy file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Copy file": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Delete rows or columns from sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields3": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete rows or columns from sheet": {
+      "main": [
+        [
+          {
+            "node": "Delete a file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields5",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "pagination",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "77cb7d6b-3e47-44ea-aeff-b76199d8b836",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c5daac21d62fec34696d81b47bd34a509a953c0a5db5cad1a5bb2b8c664d03b1"
+  },
+  "id": "go07yQQ0MUIAO6gG",
+  "tags": []
+}
